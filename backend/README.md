@@ -30,3 +30,33 @@ These are starter safeguards, not a complete child-safety or privacy compliance 
 ## Important
 
 This backend is not deployed by this repository. A live service requires a hosting account, provider approval, a secret API key configured on the host, and an HTTPS URL. Never paste the API key into ChatGPT, GitHub source files, Android Gradle properties committed to Git, or an APK.
+
+## Automated builds and tests
+
+Set the GitHub repository **Actions variable** `FLOW_API_URL` to your backend's
+HTTPS origin. The Android workflow passes this public URL to Gradle automatically;
+leave it unset to build the interface without an AI connection. This variable is
+not a provider secret. Keep the provider key only on your backend host.
+
+Run `npm test` in `backend/` with Node 20 or later. Tests use a simulated provider
+and never need an API key or incur provider charges. GitHub Actions runs these
+tests alongside the Android build.
+
+Requests require `Content-Type: application/json` and a JSON object with a
+non-empty `message` (maximum 4,000 UTF-16 code units, matching Android's length).
+The complete body is limited to 16,000 UTF-8 bytes. Invalid JSON returns 400,
+oversized input returns 413, and an unsupported content type returns 415.
+Provider failures return a generic 502/503 error without provider details.
+
+All provider calls share a 35-second deadline, within the Android client's
+45-second read timeout. Messages are moderated before generation and replies
+before delivery; an invalid moderation response fails the request.
+
+The in-memory limiter allows 20 requests per minute per IP and clears expired
+entries on subsequent requests. It resets on server restart and is not shared
+between instances. By default it uses the socket address. Set
+`FLOW_TRUST_PROXY=true` only when your host's trusted reverse proxy overwrites
+`X-Forwarded-For` and the service cannot be reached around that proxy. Otherwise
+clients could spoof that header. Behind a proxy with this option disabled,
+clients share the proxy IP's limit. Add user authentication and shared rate
+limiting before opening a paid backend to public users.

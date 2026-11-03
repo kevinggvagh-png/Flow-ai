@@ -26,6 +26,8 @@ jobs:
         with:
           gradle-version: "8.9"
       - name: Build debug APK
+        env:
+          ORG_GRADLE_PROJECT_FLOW_API_URL: ${{ vars.FLOW_API_URL }}
         run: gradle --no-daemon assembleDebug
       - name: Rename APK for Beta 3
         run: cp app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/Flow AI Beta 3.apk"
@@ -36,3 +38,14 @@ jobs:
           path: "app/build/outputs/apk/debug/Flow AI Beta 3.apk"
           if-no-files-found: error
           retention-days: 14
+
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test backend without provider credentials
+        working-directory: backend
+        run: npm test

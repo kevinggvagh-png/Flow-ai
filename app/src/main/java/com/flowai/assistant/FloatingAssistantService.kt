@@ -193,13 +193,23 @@ class FloatingAssistantService : Service() {
         send.setOnClickListener {
             val question = input.text.toString().trim()
             if (question.isNotEmpty()) {
+                if (!OnlineFlowBrain.isConfigured()) {
+                    answer.text = "Flow's AI server has not been configured yet."
+                    return@setOnClickListener
+                }
+                if (question.length > 4000) {
+                    input.error = "Please keep messages to 4000 characters or fewer."
+                    return@setOnClickListener
+                }
                 answer.text = "Connecting to Flow…"
                 input.setText("")
                 send.isEnabled = false
                 (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                     .hideSoftInputFromWindow(input.windowToken, 0)
                 OnlineFlowBrain.ask(question) { reply, error ->
+                    if (panel !== card) return@ask
                     answer.text = reply ?: "Flow couldn't answer.\n\n$error"
+                    if (reply == null && input.text.isEmpty()) input.setText(question)
                     send.isEnabled = true
                 }
             }
