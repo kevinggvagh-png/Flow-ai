@@ -1,9 +1,12 @@
 name: Build Flow AI APK
+run-name: Flow AI Beta 3 - ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches: [ "main" ]
+  push:
+    branches: [ "main", "feature/online-flow-ai" ]
 
 permissions:
   contents: read
@@ -24,11 +27,26 @@ jobs:
         with:
           gradle-version: "8.9"
       - name: Build debug APK
+        env:
+          ORG_GRADLE_PROJECT_FLOW_API_URL: ${{ vars.FLOW_API_URL }}
         run: gradle --no-daemon assembleDebug
+      - name: Rename APK for Beta 3
+        run: cp app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/Flow AI Beta 3.apk"
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Flow-AI-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Flow-AI-Beta-3
+          path: "app/build/outputs/apk/debug/Flow AI Beta 3.apk"
           if-no-files-found: error
           retention-days: 14
+
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Test backend without provider credentials
+        working-directory: backend
+        run: npm test

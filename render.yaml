@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: flow-ai-beta3-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: QWEN_API_KEY
+        sync: false
+      - key: QWEN_MODEL
+        value: qwen3.8-flash
+      - key: QWEN_BASE_URL
+        value: https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1
+      - key: FLOW_ALLOWED_ORIGIN
+        value: "*"

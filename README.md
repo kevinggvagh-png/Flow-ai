@@ -1,41 +1,47 @@
- # Flow AI — Android floating assistant this project is fully vibe coded using chatgpt , some popups may look similiar to other models , this was not intended and was not done purposefully even if the data claims so
+# Flow AI Beta 3 — Android Floating Assistant
 
-Flow AI is a native Android floating-assistant starter with a dark liquid-glass-inspired interface, a glowing cyan/violet orb, and a draggable floating launcher.
+**Flow AI Beta 3** is a native Android floating-assistant project with a dark liquid-glass-inspired interface, a glowing cyan/violet orb, and a draggable floating launcher.
 
-## Current release
+> **Project note:** This project was fully vibe-coded using ChatGPT. Some popups or interface elements may look similar to those in other apps or models. Any such similarity is unintentional; no imitation was intended.
 
-- App version: **1.1** (version code 2)
+## Current build
+
+- Release label: **Beta 3**
+- App version: **1.2** (version code 3)
 - Minimum Android version: Android 8.0 (API 26)
 - Compile/target SDK: 35
 - Java: 17
 
 ## Included
 
-- Native launcher screen with a live overlay-permission status.
-- One-tap route to Android's **Display over other apps** permission.
+- Native launcher screen with overlay-permission status.
+- Shortcut to Android's **Display over other apps** permission.
 - Start and stop controls for the floating assistant.
 - Draggable floating launcher bubble.
-- Centered, tablet-friendly glass-style popup with a close control.
-- Original greeting: **“I am Flow. Your digital intelligence is online. Systems ready. State your objective.”**
-- No microphone permission is requested by this UI-only build.
+- Tablet-friendly glass-style popup with a close control.
+- Bring Your Own API Key settings for OpenAI-compatible HTTPS providers.
+- Provider API key encrypted locally with Android Keystore and retained between app launches.
+- Direct online chat requests to the provider endpoint and selected model.
 
-## Important: AI connection status
+## Online AI status
 
-This release is the upgraded **interface and floating-window build**, not yet a connected conversational AI. Sending a message currently displays a clear setup notice; it does not contact an AI model or pretend to have generated an answer.
+To connect your own provider, open Flow AI and tap **Configure my AI API key**. Enter an API key, an OpenAI-compatible HTTPS base URL, and the model name. The default endpoint/model are Qwen-compatible examples; replace them with values from your provider's official documentation.
 
-A real AI connection needs a secure HTTPS backend. The model-provider secret must be stored on that backend (for example, as a hosting-provider secret), never embedded in the APK or committed to this repository. No API key is included in this project.
+The key is encrypted on-device using Android Keystore and is not written to the repository or APK. Flow sends requests directly to the endpoint you configure. The key remains saved between launches until you remove it from settings or uninstall/reset the app. Only use providers and credentials you are authorized to use; API usage may incur charges. Never share your key or commit it to Git.
 
-Voice input, always-on wake-word listening, and actions inside other apps are not enabled in this build. Those features require separate, user-visible Android permissions and careful platform-specific implementation.
+A project-managed backend remains available as a fallback if no local provider key is saved. See [docs/ONLINE_AI_BACKEND.md](docs/ONLINE_AI_BACKEND.md) and [backend/README.md](backend/README.md).
 
-## Build an APK
+Voice input, always-on wake-word listening, and actions inside other apps are not enabled.
 
-The repository's GitHub Actions workflow builds a debug APK on each push to `main` and uploads it as the `Flow-AI-debug-apk` artifact.
+## Build and download the APK
+
+GitHub Actions builds a debug APK on pushes to `main` and `feature/online-flow-ai`, as well as manual runs.
 
 1. Open the repository's **Actions** tab.
-2. Select **Build Flow AI APK** and open the latest successful run.
-3. Download the **Flow-AI-debug-apk** artifact.
-4. Extract the ZIP and install `app-debug.apk` on your Android tablet.
-5. If Android asks, allow installation from the app you used to open the APK.
+2. Open the latest successful **Build Flow AI APK** run.
+3. Download the **Flow-AI-Beta-3** artifact.
+4. Extract the ZIP. The APK inside is named **Flow AI Beta 3.apk**.
+5. Install it on your Android device. If Android asks, allow installation from the app used to open the APK.
 
 You can also open the project in Android Studio and run the `app` configuration.
 
@@ -45,10 +51,11 @@ You can also open the project in Android Studio and run the `app` configuration.
 2. Tap **Grant floating permission**.
 3. In Android settings, allow **Display over other apps** for Flow AI.
 4. Return to Flow AI and tap **Launch Flow AI**.
-5. Tap the floating **F** bubble to open or close the panel. Drag the bubble to reposition it.
+5. Tap the floating **F** bubble to open or close the panel. Drag it to reposition it.
 
 ## Privacy and safety
 
-- The current UI-only build does not record audio or send messages to a server.
+- The app sends chat messages only to the HTTPS backend URL configured at build time.
+- The backend is designed to keep the provider key server-side and avoid logging message contents.
+- Do not share API keys, passwords, or private credentials in source files, app resources, or GitHub commits.
 - Keep Android's overlay permission enabled only while you want the floating assistant available.
-- Do not put API keys, passwords, or private credentials in source files, app resources, or GitHub commits.
