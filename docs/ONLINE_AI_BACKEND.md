@@ -1,14 +1,15 @@
 # Flow online AI connection
 
-Flow's Android app sends chat messages to a configurable HTTPS backend. The backend implementation lives in `backend/` and calls the OpenAI Responses API.
+Flow's Android app sends chat messages to a configurable HTTPS backend. The backend implementation lives in `backend/` and calls QwenCloud's OpenAI-compatible Chat Completions API.
 
 ## Backend
 
 Read [backend/README.md](../backend/README.md) for deployment steps. The server:
 - receives `POST /v1/flow/chat` with `{"message":"..."}`
-- checks user input and generated output with OpenAI's moderation endpoint
-- generates a teen-oriented response using the Responses API
+- sends a teen-oriented system instruction and the user message to QwenCloud
 - returns `{"reply":"..."}`
+
+The default Singapore endpoint is `https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1`. The API key must be created in the same region as the endpoint. The default model is `qwen3.8-max`; both model and endpoint can be configured using backend environment variables.
 
 The backend must run on a trusted Node.js 20+ host with HTTPS. It is not automatically deployed by GitHub.
 
@@ -24,6 +25,6 @@ The app appends `/v1/flow/chat` automatically. If the property is blank, the app
 
 ## Secrets and safety
 
-Keep `OPENAI_API_KEY` only in the backend host's secret environment-variable settings. Never put it in Android code, Gradle files committed to Git, ChatGPT, or the APK.
+Keep `QWEN_API_KEY` only in the backend host's secret environment-variable settings. Never put it in Android code, Gradle files committed to Git, ChatGPT, or the APK.
 
 A parent/guardian or eligible project maintainer must review provider terms, account eligibility, consent, billing, and privacy requirements. The starter safeguards in this repository are not a complete compliance program; review `backend/README.md` before deployment.
