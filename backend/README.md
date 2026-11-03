@@ -9,7 +9,7 @@ This Node 20+ service connects the Android app to QwenCloud without putting a pr
 3. Create a QwenCloud API key in the Singapore region. The key must match the Singapore endpoint configured below.
 4. Set these server environment variables in the hosting dashboard:
    - `QWEN_API_KEY`: secret QwenCloud API key; never commit or share it
-   - `QWEN_MODEL`: optional; defaults to `qwen3.8-max`
+   - `QWEN_MODEL`: optional; defaults to `qwen3.8-flash`
    - `QWEN_BASE_URL`: optional; defaults to the Singapore OpenAI-compatible endpoint
    - `PORT`: supplied by most hosts automatically
    - `FLOW_ALLOWED_ORIGIN`: browser origin if a web client is added; native Android does not enforce browser CORS
