@@ -121,17 +121,23 @@ class FloatingAssistantService : Service() {
         }
         val brand = label("FLOW AI", 15f, Color.rgb(151, 239, 255), true)
         val spacer = View(this)
-        val status = label("● READY", 10f, Color.rgb(115, 245, 205), true)
+        val status = label("● INTERFACE READY", 9f, Color.rgb(115, 245, 205), true)
+        val close = label("×", 27f, Color.rgb(190, 215, 244), true).apply {
+            gravity = Gravity.CENTER
+            setPadding(dp(10), 0, 0, 0)
+            setOnClickListener { togglePanel() }
+        }
         top.addView(brand)
         top.addView(spacer, LinearLayout.LayoutParams(0, 1, 1f))
         top.addView(status)
+        top.addView(close)
 
         val orb = FlowOrbView(this)
         val greeting = label("I am Flow.", 23f, Color.WHITE, true).apply {
             gravity = Gravity.CENTER
             setPadding(0, dp(3), 0, dp(4))
         }
-        val subtitle = label("Your digital intelligence is online.", 13f, Color.rgb(183, 205, 231)).apply {
+        val subtitle = label("Your assistant interface is ready.", 13f, Color.rgb(183, 205, 231)).apply {
             gravity = Gravity.CENTER
         }
         val answer = label("Systems ready.\nState your objective.", 14f, Color.WHITE).apply {
@@ -194,9 +200,10 @@ class FloatingAssistantService : Service() {
             }
         }
 
-        val pp = params(dp(340), -2).apply {
-            x = dp(14)
-            y = dp(230)
+        val panelWidth = (resources.displayMetrics.widthPixels * 0.88f).toInt().coerceAtMost(dp(420))
+        val pp = params(panelWidth, -2).apply {
+            x = ((resources.displayMetrics.widthPixels - panelWidth) / 2).coerceAtLeast(dp(8))
+            y = (resources.displayMetrics.heightPixels * 0.22f).toInt()
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
         wm.addView(card, pp)
