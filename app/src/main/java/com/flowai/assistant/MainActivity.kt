@@ -18,6 +18,8 @@ class MainActivity : Activity() {
     private lateinit var overlayStatus: TextView
     private lateinit var permissionButton: Button
     private lateinit var startButton: Button
+    private lateinit var modelButton: Button
+    private lateinit var modelStatus: TextView
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
@@ -76,6 +78,22 @@ class MainActivity : Activity() {
         statusCard.addView(overlayStatus)
         root.addView(statusCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(22) })
 
+        modelStatus = text(
+            if (LocalFlowBrain.isModelDownloaded(this)) "● Offline AI model installed."
+            else "Offline AI needs a one-time download (about 586 MB). Use Wi-Fi.",
+            12f, Color.rgb(183, 205, 231)
+        ).apply { setPadding(0, dp(4), 0, dp(8)) }
+        modelButton = Button(this).apply {
+            text = if (LocalFlowBrain.isModelDownloaded(this@MainActivity)) "AI MODEL INSTALLED" else "DOWNLOAD FREE AI BRAIN"
+            isAllCaps = false
+            setTextColor(Color.WHITE)
+            background = rounded(Color.rgb(77, 70, 160), Color.rgb(115, 197, 255))
+            isEnabled = !LocalFlowBrain.isModelDownloaded(this@MainActivity)
+        }
+        root.addView(modelStatus, LinearLayout.LayoutParams(-1, -2))
+        root.addView(modelButton, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
+
+
         permissionButton = Button(this).apply {
             text = "GRANT FLOATING PERMISSION"
             isAllCaps = false
@@ -112,6 +130,21 @@ class MainActivity : Activity() {
         })
 
         setContentView(root)
+
+        modelButton.setOnClickListener {
+            modelButton.isEnabled = false
+            modelButton.text = "DOWNLOADING…"
+            modelStatus.text = "Downloading the local AI model: 0%"
+            LocalFlowBrain.downloadModel(
+                this,
+                onProgress = { percent -> modelStatus.text = "Downloading the local AI model: $percent%" },
+                onComplete = { success, message ->
+                    modelStatus.text = message
+                    modelButton.text = if (success) "AI MODEL INSTALLED" else "RETRY AI DOWNLOAD"
+                    modelButton.isEnabled = !success
+                }
+            )
+        }
 
         permissionButton.setOnClickListener {
             if (!Settings.canDrawOverlays(this)) {
