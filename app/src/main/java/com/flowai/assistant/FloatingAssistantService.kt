@@ -30,12 +30,13 @@ class FloatingAssistantService : Service() {
             setStroke(2, Color.argb(210, 91, 226, 244))
         }
 
+    @Suppress("DEPRECATION")
     private fun params(width: Int, height: Int): WindowManager.LayoutParams =
         WindowManager.LayoutParams(
             width, height,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
+            else WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
