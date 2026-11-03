@@ -56,7 +56,7 @@ test("chat calls QwenCloud with server-side key and returns reply", async t => {
   assert.equal(app.calls.length, 1);
   assert.match(app.calls[0].url, /ap-southeast-1\.maas\.qwencloudapi\.com\/compatible-mode\/v1\/chat\/completions$/);
   assert.equal(app.calls[0].headers.authorization, "Bearer test-only");
-  assert.equal(app.calls[0].body.model, "qwen3.8-max");
+  assert.equal(app.calls[0].body.model, "qwen3.8-flash");
   assert.equal(app.calls[0].body.messages[1].content, "hi");
   assert.equal(app.calls[0].body.stream, false);
   assert.equal(app.calls[0].body.max_tokens, 800);
