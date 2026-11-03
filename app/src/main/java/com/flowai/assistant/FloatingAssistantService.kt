@@ -2,8 +2,13 @@ package com.flowai.assistant
 
 import android.app.Service
 import android.content.Intent
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.RadialGradient
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -12,6 +17,8 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
+import android.content.Context
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -20,14 +27,16 @@ class FloatingAssistantService : Service() {
     private lateinit var wm: WindowManager
     private var bubble: TextView? = null
     private var panel: LinearLayout? = null
-    private var panelParams: WindowManager.LayoutParams? = null
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun glass(radius: Float): GradientDrawable =
-        GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = radius
-            setColor(Color.argb(225, 13, 35, 54))
-            setStroke(2, Color.argb(210, 91, 226, 244))
+        GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            intArrayOf(Color.argb(246, 14, 31, 57), Color.argb(238, 25, 25, 65))
+        ).apply {
+            cornerRadius = dp(radius.toInt()).toFloat()
+            setStroke(dp(1), Color.argb(190, 91, 220, 255))
         }
 
     @Suppress("DEPRECATION")
@@ -37,10 +46,9 @@ class FloatingAssistantService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
-        ).apply { gravity = Gravity.TOP or Gravity.START; x = 24; y = 180 }
+        ).apply { gravity = Gravity.TOP or Gravity.START; x = dp(18); y = dp(180) }
 
     override fun onCreate() {
         super.onCreate()
@@ -55,15 +63,17 @@ class FloatingAssistantService : Service() {
             textSize = 23f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(190, 250, 255))
-            background = GradientDrawable().apply {
+            setTextColor(Color.WHITE)
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                intArrayOf(Color.rgb(35, 202, 255), Color.rgb(105, 82, 255), Color.rgb(185, 86, 255))
+            ).apply {
                 shape = GradientDrawable.OVAL
-                setColor(Color.argb(235, 15, 55, 78))
-                setStroke(3, Color.rgb(91, 226, 244))
+                setStroke(dp(2), Color.argb(220, 190, 245, 255))
             }
-            elevation = 14f
+            elevation = dp(14).toFloat()
         }
-        val p = params(62, 62)
+        val p = params(dp(58), dp(58))
         b.setOnTouchListener(object : View.OnTouchListener {
             var sx = 0f; var sy = 0f; var ox = 0; var oy = 0; var moved = false
             override fun onTouch(v: View, e: MotionEvent): Boolean {
@@ -71,7 +81,7 @@ class FloatingAssistantService : Service() {
                     MotionEvent.ACTION_DOWN -> { sx=e.rawX; sy=e.rawY; ox=p.x; oy=p.y; moved=false; return true }
                     MotionEvent.ACTION_MOVE -> {
                         val dx=(e.rawX-sx).toInt(); val dy=(e.rawY-sy).toInt()
-                        if (kotlin.math.abs(dx)+kotlin.math.abs(dy)>8) moved=true
+                        if (kotlin.math.abs(dx)+kotlin.math.abs(dy)>dp(7)) moved=true
                         p.x=ox+dx; p.y=oy+dy; wm.updateViewLayout(b,p); return true
                     }
                     MotionEvent.ACTION_UP -> { if (!moved) togglePanel(); return true }
@@ -83,82 +93,166 @@ class FloatingAssistantService : Service() {
         bubble = b
     }
 
+    private fun label(text: String, size: Float, color: Int, bold: Boolean = false): TextView =
+        TextView(this).apply {
+            this.text = text
+            textSize = size
+            setTextColor(color)
+            if (bold) typeface = Typeface.DEFAULT_BOLD
+        }
+
     private fun togglePanel() {
         if (panel != null) {
             try { wm.removeView(panel) } catch (_: Exception) {}
             panel = null
             return
         }
-        val box = LinearLayout(this).apply {
+
+        val card = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(20, 18, 20, 16)
-            background = glass(34f)
-            elevation = 22f
+            setPadding(dp(21), dp(18), dp(21), dp(18))
+            background = glass(30f)
+            elevation = dp(28).toFloat()
         }
-        val heading = TextView(this).apply {
-            text = "FLOW AI  ·  LIQUID GLASS"
-            textSize = 17f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(Color.rgb(142, 242, 255))
+
+        val top = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
         }
-        val answer = TextView(this).apply {
-            text = "Hi! I'm Flow AI. What can I help you with?\n\nThis starter currently uses local demo replies."
-            textSize = 14f
-            setTextColor(Color.WHITE)
-            setPadding(0, 18, 0, 18)
+        val brand = label("FLOW AI", 15f, Color.rgb(151, 239, 255), true)
+        val spacer = View(this)
+        val status = label("● READY", 10f, Color.rgb(115, 245, 205), true)
+        top.addView(brand)
+        top.addView(spacer, LinearLayout.LayoutParams(0, 1, 1f))
+        top.addView(status)
+
+        val orb = FlowOrbView(this)
+        val greeting = label("I am Flow.", 23f, Color.WHITE, true).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(3), 0, dp(4))
+        }
+        val subtitle = label("Your digital intelligence is online.", 13f, Color.rgb(183, 205, 231)).apply {
+            gravity = Gravity.CENTER
+        }
+        val answer = label("Systems ready.\nState your objective.", 14f, Color.WHITE).apply {
+            setPadding(dp(2), dp(16), dp(2), dp(16))
+        }
+
+        val inputRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = GradientDrawable().apply {
+                cornerRadius = dp(19).toFloat()
+                setColor(Color.argb(145, 5, 17, 38))
+                setStroke(dp(1), Color.argb(150, 102, 197, 239))
+            }
+            setPadding(dp(12), dp(3), dp(5), dp(3))
         }
         val input = EditText(this).apply {
-            hint = "Ask Flow AI…"
-            setHintTextColor(Color.LTGRAY)
+            hint = "Give Flow an instruction..."
+            textSize = 14f
+            setHintTextColor(Color.rgb(137, 162, 194))
             setTextColor(Color.WHITE)
-            background = glass(22f)
-            setPadding(14, 10, 14, 10)
+            setSingleLine(false)
+            maxLines = 3
+            background = null
+            setPadding(dp(3), dp(8), dp(3), dp(8))
         }
         val send = TextView(this).apply {
-            text = "  SEND  "
-            textSize = 14f
-            typeface = Typeface.DEFAULT_BOLD
+            text = "➤"
+            textSize = 18f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(5, 22, 32))
-            background = GradientDrawable().apply {
-                cornerRadius = 24f
-                setColor(Color.rgb(116, 235, 247))
-            }
-            setPadding(18, 12, 18, 12)
+            setTextColor(Color.WHITE)
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                intArrayOf(Color.rgb(28, 194, 245), Color.rgb(117, 91, 255))
+            ).apply { shape = GradientDrawable.OVAL }
         }
-        val close = TextView(this).apply {
-            text = "Close"
-            setTextColor(Color.LTGRAY)
-            gravity = Gravity.END
-            setPadding(0, 12, 0, 0)
+        inputRow.addView(input, LinearLayout.LayoutParams(0, -2, 1f))
+        inputRow.addView(send, LinearLayout.LayoutParams(dp(42), dp(42)))
+
+        val footer = label("LIQUID GLASS  •  FLOATING ASSISTANT", 9f, Color.rgb(126, 164, 204)).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(14), 0, 0)
         }
-        box.addView(heading)
-        box.addView(answer)
-        box.addView(input, LinearLayout.LayoutParams(-1, -2))
-        box.addView(send, LinearLayout.LayoutParams(-2, -2).apply { gravity = Gravity.END; topMargin = 12 })
-        box.addView(close)
+
+        card.addView(top)
+        card.addView(orb, LinearLayout.LayoutParams(-1, dp(112)))
+        card.addView(greeting)
+        card.addView(subtitle)
+        card.addView(answer)
+        card.addView(inputRow)
+        card.addView(footer)
+
         send.setOnClickListener {
-            val q = input.text.toString().trim()
-            if (q.isNotEmpty()) {
-                answer.text = "You: $q\n\nI'm the Flow AI demo. A real AI service hasn't been connected yet."
+            val question = input.text.toString().trim()
+            if (question.isNotEmpty()) {
+                answer.text = "Instruction received:\n$question\n\nThe live AI connection still needs a secure backend."
                 input.setText("")
+                (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                    .hideSoftInputFromWindow(input.windowToken, 0)
             }
         }
-        close.setOnClickListener { togglePanel() }
-        val pp = params(310, -2).apply {
-            flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-            x = 18; y = 260
+
+        val pp = params(dp(340), -2).apply {
+            x = dp(14)
+            y = dp(230)
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
-        wm.addView(box, pp)
-        panel = box
-        panelParams = pp
+        wm.addView(card, pp)
+        panel = card
+    }
+
+    private class FlowOrbView(context: Context) : View(context) {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val wave = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 4f * resources.displayMetrics.density
+            strokeCap = Paint.Cap.ROUND
+            color = Color.rgb(121, 240, 255)
+        }
+
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val d = resources.displayMetrics.density
+            val cx = width / 2f
+            val cy = height / 2f
+            val r = 42f * d
+
+            paint.shader = RadialGradient(
+                cx - 9f*d, cy - 10f*d, r * 1.45f,
+                intArrayOf(Color.argb(220, 68, 229, 255), Color.argb(145, 67, 91, 255), Color.argb(0, 115, 62, 255)),
+                null, Shader.TileMode.CLAMP
+            )
+            canvas.drawCircle(cx, cy, r * 1.45f, paint)
+            paint.shader = null
+            paint.style = Paint.Style.FILL
+            paint.color = Color.argb(205, 18, 48, 110)
+            canvas.drawCircle(cx, cy, r, paint)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 2f*d
+            paint.color = Color.rgb(102, 233, 255)
+            canvas.drawCircle(cx, cy, r, paint)
+            paint.strokeWidth = 1.2f*d
+            paint.color = Color.argb(220, 170, 125, 255)
+            canvas.drawCircle(cx, cy, r - 5f*d, paint)
+
+            val path = Path().apply {
+                moveTo(cx-r*0.68f, cy+2f*d)
+                cubicTo(cx-r*0.25f, cy-r*0.62f, cx+r*0.02f, cy+r*0.62f, cx+r*0.36f, cy+1f*d)
+                cubicTo(cx+r*0.52f, cy-r*0.18f, cx+r*0.60f, cy-r*0.20f, cx+r*0.69f, cy-3f*d)
+            }
+            canvas.drawPath(path, wave)
+        }
     }
 
     override fun onDestroy() {
         try { bubble?.let { wm.removeView(it) } } catch (_: Exception) {}
         try { panel?.let { wm.removeView(it) } } catch (_: Exception) {}
-        bubble = null; panel = null
+        bubble = null
+        panel = null
         super.onDestroy()
     }
+
     override fun onBind(intent: Intent?): IBinder? = null
 }
