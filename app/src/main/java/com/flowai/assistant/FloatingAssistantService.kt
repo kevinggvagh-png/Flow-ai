@@ -193,7 +193,7 @@ class FloatingAssistantService : Service() {
         send.setOnClickListener {
             val question = input.text.toString().trim()
             if (question.isNotEmpty()) {
-                if (!OnlineFlowBrain.isConfigured()) {
+                if (!OnlineFlowBrain.isConfigured(this)) {
                     answer.text = "Flow's AI server has not been configured yet."
                     return@setOnClickListener
                 }
@@ -206,7 +206,7 @@ class FloatingAssistantService : Service() {
                 send.isEnabled = false
                 (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                     .hideSoftInputFromWindow(input.windowToken, 0)
-                OnlineFlowBrain.ask(question) { reply, error ->
+                OnlineFlowBrain.ask(this, question) { reply, error ->
                     if (panel !== card) return@ask
                     answer.text = reply ?: "Flow couldn't answer.\n\n$error"
                     if (reply == null && input.text.isEmpty()) input.setText(question)
