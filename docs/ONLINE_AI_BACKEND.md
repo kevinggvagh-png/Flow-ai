@@ -1,8 +1,12 @@
 # Flow online AI connection
 
-Flow's Android app sends chat messages to a configurable HTTPS backend. The backend implementation lives in `backend/` and calls the OpenAI Responses API.
+Flow's Android app sends chat messages to a configurable HTTPS backend. The
+recommended free prototype is [`worker/`](../worker/README.md), using Cloudflare
+Workers for hosting and Workers AI for replies and moderation. One Cloudflare
+account provides the backend and models through bindings. Daily free quotas
+apply; follow the linked deployment steps on `feature/cloudflare-flow-ai`.
 
-## Backend
+## Existing Node/OpenAI backend
 
 Read [backend/README.md](../backend/README.md) for deployment steps. The server:
 - receives `POST /v1/flow/chat` with `{"message":"..."}`
@@ -10,7 +14,9 @@ Read [backend/README.md](../backend/README.md) for deployment steps. The server:
 - generates a teen-oriented response using the Responses API
 - returns `{"reply":"..."}`
 
-The backend must run on a trusted Node.js 20+ host with HTTPS. It is not automatically deployed by GitHub.
+The description above applies to the earlier Node/OpenAI implementation in
+`backend/`, which remains an independent option. It is not required for the
+Cloudflare deployment. Neither backend is deployed by the Android build.
 
 ## Android build
 

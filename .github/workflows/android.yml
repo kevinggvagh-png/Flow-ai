@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [ "main" ]
   push:
-    branches: [ "main", "feature/online-flow-ai" ]
+    branches: [ "main", "feature/online-flow-ai", "feature/cloudflare-flow-ai" ]
 
 permissions:
   contents: read
@@ -49,3 +49,21 @@ jobs:
       - name: Test backend without provider credentials
         working-directory: backend
         run: npm test
+
+  worker-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Install Worker tools
+        working-directory: worker
+        run: npm ci
+      - name: Test Worker with simulated AI
+        working-directory: worker
+        run: npm test
+      - name: Validate Cloudflare bundle
+        working-directory: worker
+        run: npm run check
+

@@ -23,9 +23,15 @@
 
 ## Online AI status
 
-The Android app is prepared to connect to an online AI backend, and the repository includes backend source code in `backend/`. **The backend is not deployed or configured yet**, so a working live AI connection is not included automatically in this build.
+The Android app connects to a configurable HTTPS backend. The recommended free
+prototype path is **Cloudflare Workers + Workers AI**, implemented in
+[`worker/`](worker/README.md). It hosts both the backend and the AI through one
+Cloudflare account without a separate provider API key. Free daily limits apply.
 
-To enable it, an eligible adult/project administrator must arrange a provider account and hosting that permit this app's intended use, deploy the backend, and store the provider API key as a server-side environment secret. Never put API keys in the APK, source code, or Git commits.
+**Deployment is still required.** Follow [the Cloudflare setup](worker/README.md),
+then set `FLOW_API_URL` to the new Worker origin and rebuild the APK. Source code
+alone does not activate live AI. The earlier Node/OpenAI backend remains available
+in [`backend/`](backend/README.md) as a separate deployment option.
 
 Set the Android build property `FLOW_API_URL` to the deployed backend's HTTPS base URL when building. See [docs/ONLINE_AI_BACKEND.md](docs/ONLINE_AI_BACKEND.md) and [backend/README.md](backend/README.md).
 
@@ -33,7 +39,9 @@ Voice input, always-on wake-word listening, and actions inside other apps are no
 
 ## Build and download the APK
 
-GitHub Actions builds a debug APK on pushes to `main` and `feature/online-flow-ai`, as well as manual runs.
+GitHub Actions builds a debug APK on pushes to `main`, `feature/online-flow-ai`,
+and `feature/cloudflare-flow-ai`, as well as manual runs. It also tests both
+backends and validates the Cloudflare bundle.
 
 1. Open the repository's **Actions** tab.
 2. Open the latest successful **Build Flow AI APK** run.
@@ -57,3 +65,4 @@ You can also open the project in Android Studio and run the `app` configuration.
 - The backend is designed to keep the provider key server-side and avoid logging message contents.
 - Do not share API keys, passwords, or private credentials in source files, app resources, or GitHub commits.
 - Keep Android's overlay permission enabled only while you want the floating assistant available.
+
