@@ -19,15 +19,17 @@
 - Start and stop controls for the floating assistant.
 - Draggable floating launcher bubble.
 - Tablet-friendly glass-style popup with a close control.
-- Online-AI client that sends chat messages to a configurable HTTPS backend.
+- Bring Your Own API Key settings for OpenAI-compatible HTTPS providers.
+- Provider API key encrypted locally with Android Keystore and retained between app launches.
+- Direct online chat requests to the provider endpoint and selected model.
 
 ## Online AI status
 
-The Android app is prepared to connect to an online AI backend, and the repository includes backend source code in `backend/`. **The backend is not deployed or configured yet**, so a working live AI connection is not included automatically in this build.
+To connect your own provider, open Flow AI and tap **Configure my AI API key**. Enter an API key, an OpenAI-compatible HTTPS base URL, and the model name. The default endpoint/model are Qwen-compatible examples; replace them with values from your provider's official documentation.
 
-To enable it, an eligible adult/project administrator must arrange a provider account and hosting that permit this app's intended use, deploy the backend, and store the provider API key as a server-side environment secret. Never put API keys in the APK, source code, or Git commits.
+The key is encrypted on-device using Android Keystore and is not written to the repository or APK. Flow sends requests directly to the endpoint you configure. The key remains saved between launches until you remove it from settings or uninstall/reset the app. Only use providers and credentials you are authorized to use; API usage may incur charges. Never share your key or commit it to Git.
 
-Set the Android build property `FLOW_API_URL` to the deployed backend's HTTPS base URL when building. See [docs/ONLINE_AI_BACKEND.md](docs/ONLINE_AI_BACKEND.md) and [backend/README.md](backend/README.md).
+A project-managed backend remains available as a fallback if no local provider key is saved. See [docs/ONLINE_AI_BACKEND.md](docs/ONLINE_AI_BACKEND.md) and [backend/README.md](backend/README.md).
 
 Voice input, always-on wake-word listening, and actions inside other apps are not enabled.
 
