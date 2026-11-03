@@ -1,6 +1,10 @@
 package com.flowai.assistant
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.text.InputType
+import android.widget.EditText
+import android.widget.ScrollView
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -92,6 +96,12 @@ class MainActivity : Activity() {
                 intArrayOf(Color.rgb(93, 235, 255), Color.rgb(153, 129, 255))
             ).apply { cornerRadius = dp(18).toFloat() }
         }
+        val aiSettingsButton = Button(this).apply {
+            text = "CONFIGURE MY AI API KEY"
+            isAllCaps = false
+            setTextColor(Color.rgb(145, 241, 255))
+            background = rounded(Color.argb(90, 28, 43, 70), Color.argb(150, 91, 220, 255))
+        }
         val stopButton = Button(this).apply {
             text = "STOP FLOATING ASSISTANT"
             isAllCaps = false
@@ -101,6 +111,7 @@ class MainActivity : Activity() {
 
         root.addView(permissionButton, LinearLayout.LayoutParams(-1, dp(54)).apply { bottomMargin = dp(10) })
         root.addView(startButton, LinearLayout.LayoutParams(-1, dp(56)).apply { bottomMargin = dp(10) })
+        root.addView(aiSettingsButton, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(10) })
         root.addView(stopButton, LinearLayout.LayoutParams(-1, dp(50)).apply { bottomMargin = dp(24) })
 
         root.addView(text("A quiet assistant, ready when you are.", 13f, Color.rgb(139, 163, 198)).apply {
@@ -125,6 +136,7 @@ class MainActivity : Activity() {
                 permissionButton.performClick()
             }
         }
+        aiSettingsButton.setOnClickListener { showAiSettings() }
         stopButton.setOnClickListener {
             stopService(Intent(this, FloatingAssistantService::class.java))
         }
@@ -134,6 +146,64 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         if (::overlayStatus.isInitialized) updatePermissionState()
+    }
+
+    private fun showAiSettings() {
+        val saved = FlowApiKeyStore.load(this)
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(4))
+        }
+        fun field(hintText: String, value: String, secret: Boolean = false): EditText {
+            return EditText(this).apply {
+                hint = hintText
+                setText(value)
+                textSize = 14f
+                setTextColor(Color.WHITE)
+                setHintTextColor(Color.LTGRAY)
+                inputType = if (secret) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+                setSingleLine(true)
+                background = rounded(Color.argb(150, 15, 29, 55), Color.argb(150, 91, 197, 238))
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+            }
+        }
+        form.addView(text("API KEY (saved encrypted on this device)", 12f, Color.rgb(145, 220, 245), true))
+        val key = field(if (saved == null) "Paste your provider API key" else "Saved key — enter a new key to replace", "", true)
+        form.addView(key, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
+        form.addView(text("OPENAI-COMPATIBLE API BASE URL", 12f, Color.rgb(145, 220, 245), true))
+        val endpoint = field("https://api.example.com/v1", saved?.baseUrl ?: "https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1")
+        form.addView(endpoint, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(12) })
+        form.addView(text("MODEL NAME", 12f, Color.rgb(145, 220, 245), true))
+        val model = field("Model name", saved?.model ?: "qwen3.8-flash")
+        form.addView(model, LinearLayout.LayoutParams(-1, dp(52)).apply { bottomMargin = dp(10) })
+        form.addView(text("Your key stays encrypted on this device using Android Keystore. Flow sends it directly to the endpoint you enter. Only use a provider and key you are authorized to use. Usage may cost money.", 11f, Color.LTGRAY))
+        val scroll = ScrollView(this).apply { addView(form) }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Your AI provider")
+            .setView(scroll)
+            .setPositiveButton("SAVE SECURELY", null)
+            .setNeutralButton("REMOVE SAVED KEY", null)
+            .setNegativeButton("CANCEL", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val enteredKey = key.text.toString().trim().ifBlank { saved?.apiKey.orEmpty() }
+                try {
+                    FlowApiKeyStore.save(this, FlowProviderConfig(enteredKey, endpoint.text.toString(), model.text.toString()))
+                    android.widget.Toast.makeText(this, "AI settings saved securely on this device.", android.widget.Toast.LENGTH_LONG).show()
+                    dialog.dismiss()
+                } catch (e: Exception) {
+                    key.error = e.message ?: "Check your settings"
+                }
+            }
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                FlowApiKeyStore.clear(this)
+                android.widget.Toast.makeText(this, "Saved API key removed.", android.widget.Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+        }
+        dialog.show()
     }
 
     private fun updatePermissionState() {
