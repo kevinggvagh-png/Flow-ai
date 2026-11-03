@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: flow-ai-backend
+    name: flow-ai-beta3-backend
     runtime: node
     plan: free
     rootDir: backend
@@ -10,7 +10,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: OPENAI_MODEL
-        value: gpt-4.1-mini
-      - key: OPENAI_API_KEY
+      - key: QWEN_API_KEY
         sync: false
+      - key: QWEN_MODEL
+        value: qwen3.8-max
+      - key: QWEN_BASE_URL
+        value: https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1
+      - key: FLOW_ALLOWED_ORIGIN
+        value: "*"
