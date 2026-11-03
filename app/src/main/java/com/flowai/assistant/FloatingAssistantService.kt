@@ -127,14 +127,14 @@ class FloatingAssistantService : Service() {
         top.addView(status)
 
         val orb = FlowOrbView(this)
-        val greeting = label("Hello there.", 23f, Color.WHITE, true).apply {
+        val greeting = label("I am Flow.", 23f, Color.WHITE, true).apply {
             gravity = Gravity.CENTER
             setPadding(0, dp(3), 0, dp(4))
         }
-        val subtitle = label("Your AI, flowing alongside you.", 13f, Color.rgb(183, 205, 231)).apply {
+        val subtitle = label("Your digital intelligence is online.", 13f, Color.rgb(183, 205, 231)).apply {
             gravity = Gravity.CENTER
         }
-        val answer = label("I'm ready when you are.\nAsk me anything to get started.", 14f, Color.WHITE).apply {
+        val answer = label("Systems ready.\nState your objective.", 14f, Color.WHITE).apply {
             setPadding(dp(2), dp(16), dp(2), dp(16))
         }
 
@@ -149,7 +149,7 @@ class FloatingAssistantService : Service() {
             setPadding(dp(12), dp(3), dp(5), dp(3))
         }
         val input = EditText(this).apply {
-            hint = "Ask Flow AI..."
+            hint = "Give Flow an instruction..."
             textSize = 14f
             setHintTextColor(Color.rgb(137, 162, 194))
             setTextColor(Color.WHITE)
@@ -187,7 +187,7 @@ class FloatingAssistantService : Service() {
         send.setOnClickListener {
             val question = input.text.toString().trim()
             if (question.isNotEmpty()) {
-                answer.text = "You: $question\n\nThe visual redesign is ready. The live AI connection still needs a secure backend."
+                answer.text = "Instruction received:\n$question\n\nThe live AI connection still needs a secure backend."
                 input.setText("")
                 (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                     .hideSoftInputFromWindow(input.windowToken, 0)
