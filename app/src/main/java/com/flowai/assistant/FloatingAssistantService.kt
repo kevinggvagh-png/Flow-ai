@@ -193,10 +193,15 @@ class FloatingAssistantService : Service() {
         send.setOnClickListener {
             val question = input.text.toString().trim()
             if (question.isNotEmpty()) {
-                answer.text = "Instruction received:\n$question\n\nThe live AI connection still needs a secure backend."
+                answer.text = "Connecting to Flow…"
                 input.setText("")
+                send.isEnabled = false
                 (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                     .hideSoftInputFromWindow(input.windowToken, 0)
+                OnlineFlowBrain.ask(question) { reply, error ->
+                    answer.text = reply ?: "Flow couldn't answer.\n\n$error"
+                    send.isEnabled = true
+                }
             }
         }
 
