@@ -193,10 +193,22 @@ class FloatingAssistantService : Service() {
         send.setOnClickListener {
             val question = input.text.toString().trim()
             if (question.isNotEmpty()) {
-                answer.text = "Instruction received:\n$question\n\nThe live AI connection still needs a secure backend."
+                answer.text = "Flow is thinking…"
                 input.setText("")
+                send.isEnabled = false
                 (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
                     .hideSoftInputFromWindow(input.windowToken, 0)
+                LocalFlowBrain.ask(
+                    this, question,
+                    onChunk = { piece ->
+                        if (answer.text.toString() == "Flow is thinking…") answer.text = ""
+                        answer.append(piece)
+                    },
+                    onDone = { error ->
+                        send.isEnabled = true
+                        if (error != null) answer.append("\n\n" + error)
+                    }
+                )
             }
         }
 
