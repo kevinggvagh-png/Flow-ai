@@ -5,10 +5,10 @@ import { createFlowServer } from "./server.js";
 async function fixture(t, { env = {}, replies = [], clock } = {}) {
   const calls = [];
   const server = createFlowServer({
-    env: { OPENAI_API_KEY: "test-only", ...env },
+    env: { QWEN_API_KEY: "test-only", ...env },
     now: clock,
     fetchImpl: async (url, options) => {
-      calls.push({ url, body: JSON.parse(options.body), signal: options.signal });
+      calls.push({ url, body: JSON.parse(options.body), headers: options.headers, signal: options.signal });
       const reply = replies.shift();
       if (reply instanceof Error) throw reply;
       assert.ok(reply, "Unexpected provider call");
@@ -28,7 +28,7 @@ async function fixture(t, { env = {}, replies = [], clock } = {}) {
 }
 
 test("health and unconfigured chat do not call the provider", async t => {
-  const app = await fixture(t, { env: { OPENAI_API_KEY: "" } });
+  const app = await fixture(t, { env: { QWEN_API_KEY: "" } });
   assert.deepEqual(await (await app.get("/health")).json(), { ok: true, aiConfigured: false });
   assert.equal((await app.post('{"message":"Hello"}')).status, 503);
   assert.equal(app.calls.length, 0);
@@ -36,10 +36,10 @@ test("health and unconfigured chat do not call the provider", async t => {
 
 test("invalid JSON and invalid message shapes return client errors", async t => {
   const app = await fixture(t);
-  for (const body of ["{", "null", "[]", "1", '{}', '{"message":12}', '{"message":" "}']) {
+  for (const body of ["{", "null", "[]", "1", "{}", '{"message":12}', '{"message":" "}']) {
     assert.equal((await app.post(body)).status, 400, body);
   }
-  assert.equal((await app.post('{}', { "content-type": "text/plain" })).status, 415);
+  assert.equal((await app.post("{}", { "content-type": "text/plain" })).status, 415);
   assert.equal(app.calls.length, 0);
 });
 
@@ -50,34 +50,29 @@ test("message length and UTF-8 body byte limits are enforced", async t => {
   assert.equal(app.calls.length, 0);
 });
 
-const clear = { results: [{ flagged: false }] };
-const flagged = { results: [{ flagged: true }] };
-
-test("chat moderates input and output and returns provider text", async t => {
-  const app = await fixture(t, { replies: [clear, {
-    output: [{ type: "message", content: [{ type: "output_text", text: " Hello! " }] }]
-  }, clear] });
-  assert.deepEqual(await (await app.post('{"message":" hi "}')).json(), { reply: "Hello!" });
-  assert.equal(app.calls.length, 3);
-  assert.equal(app.calls[1].body.input, "hi");
-  assert.equal(app.calls[1].body.store, false);
-  assert.equal(app.calls[0].signal, app.calls[2].signal);
-});
-
-test("flagged input never reaches generation", async t => {
-  const app = await fixture(t, { replies: [flagged] });
-  const response = await app.post('{"message":"example"}');
-  assert.equal(response.status, 200);
-  assert.match((await response.json()).reply, /safer/);
+test("chat calls QwenCloud with server-side key and returns reply", async t => {
+  const app = await fixture(t, { replies: [{ choices: [{ message: { content: " Hello Flow! " } }] }] });
+  assert.deepEqual(await (await app.post('{"message":" hi "}')).json(), { reply: "Hello Flow!" });
   assert.equal(app.calls.length, 1);
+  assert.match(app.calls[0].url, /ap-southeast-1\.maas\.qwencloudapi\.com\/compatible-mode\/v1\/chat\/completions$/);
+  assert.equal(app.calls[0].headers.authorization, "Bearer test-only");
+  assert.equal(app.calls[0].body.model, "qwen3.8-max");
+  assert.equal(app.calls[0].body.messages[1].content, "hi");
+  assert.equal(app.calls[0].body.stream, false);
+  assert.equal(app.calls[0].body.max_tokens, 800);
 });
 
-test("flagged output is replaced", async t => {
-  const app = await fixture(t, { replies: [clear, { output_text: "blocked output" }, flagged] });
-  assert.match((await (await app.post('{"message":"example"}')).json()).reply, /safer/);
+test("custom Qwen model and endpoint are configurable", async t => {
+  const app = await fixture(t, {
+    env: { QWEN_MODEL: "qwen3.7-plus", QWEN_BASE_URL: "https://example.test/v1/" },
+    replies: [{ choices: [{ message: { content: "ok" } }] }]
+  });
+  await app.post('{"message":"hi"}');
+  assert.equal(app.calls[0].url, "https://example.test/v1/chat/completions");
+  assert.equal(app.calls[0].body.model, "qwen3.7-plus");
 });
 
-test("provider errors and malformed moderation fail without exposing secrets", async t => {
+test("provider errors and malformed responses fail without exposing secrets", async t => {
   for (const reply of [{ status: 401, body: { error: { message: "secret test-key" } } }, {}, new Error("timeout")]) {
     const app = await fixture(t, { replies: [reply] });
     const response = await app.post('{"message":"hi"}');
@@ -91,19 +86,13 @@ test("provider throttling returns temporary unavailability", async t => {
   assert.equal((await app.post('{"message":"hi"}')).status, 503);
 });
 
-test("empty generated text is rejected before output moderation", async t => {
-  const app = await fixture(t, { replies: [clear, { output: [] }] });
-  assert.equal((await app.post('{"message":"hi"}')).status, 502);
-  assert.equal(app.calls.length, 2);
-});
-
 test("forwarded header spoofing does not bypass rate limits; window resets", async t => {
   let timestamp = 0;
   const app = await fixture(t, { clock: () => timestamp });
   for (let i = 0; i < 20; i++) {
-    assert.equal((await app.post('{}', { "x-forwarded-for": `client-${i}` })).status, 400);
+    assert.equal((await app.post("{}", { "x-forwarded-for": `client-${i}` })).status, 400);
   }
-  assert.equal((await app.post('{}', { "x-forwarded-for": "another" })).status, 429);
+  assert.equal((await app.post("{}", { "x-forwarded-for": "another" })).status, 429);
   timestamp = 60_001;
-  assert.equal((await app.post('{}')).status, 400);
+  assert.equal((await app.post("{}")).status, 400);
 });
