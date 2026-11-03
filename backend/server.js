@@ -7,7 +7,7 @@ class RequestError extends Error {
 
 export function createFlowServer({ env = process.env, fetchImpl = fetch, now = Date.now } = {}) {
   const API_KEY = env.QWEN_API_KEY;
-  const MODEL = env.QWEN_MODEL || "qwen3.8-max";
+  const MODEL = env.QWEN_MODEL || "qwen3.8-flash";
   const BASE_URL = (env.QWEN_BASE_URL || "https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1").replace(/\/$/, "");
   const ALLOWED_ORIGIN = env.FLOW_ALLOWED_ORIGIN || "*";
   const MAX_MESSAGE_CHARS = 4000;
