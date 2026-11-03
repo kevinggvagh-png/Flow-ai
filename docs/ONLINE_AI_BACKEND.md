@@ -9,7 +9,7 @@ Read [backend/README.md](../backend/README.md) for deployment steps. The server:
 - sends a teen-oriented system instruction and the user message to QwenCloud
 - returns `{"reply":"..."}`
 
-The default Singapore endpoint is `https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1`. The API key must be created in the same region as the endpoint. The default model is `qwen3.8-max`; both model and endpoint can be configured using backend environment variables.
+The default Singapore endpoint is `https://ap-southeast-1.maas.qwencloudapi.com/compatible-mode/v1`. The API key must be created in the same region as the endpoint. The default model is `qwen3.8-flash`; both model and endpoint can be configured using backend environment variables.
 
 The backend must run on a trusted Node.js 20+ host with HTTPS. It is not automatically deployed by GitHub.
 
