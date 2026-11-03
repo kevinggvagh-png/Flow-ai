@@ -1,4 +1,4 @@
-# Flow AI — Android floating assistant
+ # Flow AI — Android floating assistant this project is fully vibe coded using chatgpt , some popups may look similiar to other models , this was not intended and was not done purposefully even if the data claims so
 
 Flow AI is a native Android floating-assistant starter with a dark liquid-glass-inspired interface, a glowing cyan/violet orb, and a draggable floating launcher.
 
